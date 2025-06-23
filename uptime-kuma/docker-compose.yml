@@ -1,0 +1,39 @@
+services:
+    mariadb:
+      image: mariadb:latest
+      container_name: mariadb-uptime
+      environment:
+        MARIADB_ROOT_PASSWORD: your_root_password
+        MARIADB_USER: your_user
+        MARIADB_PASSWORD: your_password
+        MARIADB_DATABASE: kuma
+        TZ: America/Sao_Paulo
+      restart: always
+      volumes:
+        - mariadb_data:/var/lib/mysql
+      networks:
+        - uptime-kuma
+    uptime-kuma:
+      image: louislam/uptime-kuma:beta
+      container_name: uptime-kuma
+      environment:
+        TZ: America/Sao_Paulo
+      volumes:
+        - uptime-kuma-data:/app/data
+      networks:
+        - uptime-kuma
+      ports:
+        - 3001:3001 
+      restart: always
+      depends_on: 
+        - mariadb
+volumes:
+  mariadb_data:
+    driver: local
+  uptime-kuma-data:
+    driver: local
+networks:
+  uptime-kuma:
+    driver: bridge
+
+  

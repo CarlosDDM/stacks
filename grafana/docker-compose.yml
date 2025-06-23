@@ -1,0 +1,17 @@
+services:
+  grafana:
+    image: grafana/grafana-oss
+    container_name: grafana
+    restart: always
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana_storage:/var/lib/grafana
+    networks:
+      - grafana-network
+volumes:
+  grafana_storage:
+    driver: local
+networks:
+  grafana-network:
+    driver: bridge

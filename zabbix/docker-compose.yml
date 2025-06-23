@@ -1,0 +1,113 @@
+services:
+  postgres:
+    container_name: postgres-zabbix
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zabbix
+    ports:
+      - 5432:5432 
+    networks:
+      - zabbix-monit
+    volumes:
+      - postgres-zabbix-data:/var/lib/postgresql/data
+    restart: 
+      always
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql
+    container_name: zabbix-server
+    environment:
+      DB_SERVER_HOST: postgres-zabbix
+      DB_SERVER_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zabbix
+    networks:
+      - zabbix-monit
+    volumes:
+      - zabbix-server-alertscripts:/usr/lib/zabbix/alertscripts
+      - zabbix-server-externalscripts:/usr/lib/zabbix/externalscripts
+      - zabbix-server-modules:/var/lib/zabbix/modules
+      - zabbix-server-enc:/var/lib/zabbix/enc
+      - zabbix-server-export:/var/lib/zabbix/export
+      - zabbix-server-ssh_keys:/var/lib/zabbix/ssh_keys
+      - zabbix-server-ssl:/var/lib/zabbix/ssl/certs
+      - zabbix-server-ssl-keys:/var/lib/zabbix/ssl/keys
+      - zabbix-server-ssl-ca:/var/lib/zabbix/ssl/ssl_ca
+      - zabbix-server-snmptraps:/var/lib/zabbix/snmptraps
+    depends_on:
+      - postgres
+    restart: 
+      always
+  zabbix-agent:
+    image: zabbix/zabbix-agent
+    container_name: zabbix-agent
+    environment:
+      ZBX_HOSTNAME: zabbix-agent
+      ZBX_SERVER_HOST: zabbix-server
+    volumes:
+      - zabbix-agent-zabbix_agentd:/etc/zabbix/zabbix_agentd.d
+    networks:
+      - zabbix-monit
+    depends_on:
+      - zabbix-server
+    restart: 
+      always
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-pgsql
+    container_name: zabbix-web
+    environment:
+      ZBX_SERVER_HOST: zabbix-server
+      ZBX_SERVER_PORT: 10051
+      DB_SERVER_HOST: postgres-zabbix
+      DB_SERVER_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zabbix
+      PHP_TZ: America/Sao_Paulo
+    networks:
+      - zabbix-monit
+    ports:
+      - 8080:8080
+    volumes:
+      - zabbix-frontend-ssl:/etc/ssl/nginx
+      - zabbix-frontend-certs:/etc/zabbix/web/certs
+    depends_on:
+      - postgres
+      - zabbix-server
+    restart:
+      always
+volumes:
+  postgres-zabbix-data:
+    driver: local
+  zabbix-server-alertscripts:
+    driver: local
+  zabbix-server-externalscripts:
+    driver: local
+  zabbix-server-modules:
+    driver: local
+  zabbix-server-enc:
+    driver: local
+  zabbix-server-ssh_keys:
+    driver: local
+  zabbix-server-ssl:
+    driver: local
+  zabbix-server-ssl-keys:
+    driver: local
+  zabbix-server-ssl-ca:
+    driver: local
+  zabbix-server-snmptraps:
+    driver: local
+  zabbix-server-export:
+    driver: local
+  zabbix-agent-zabbix_agentd:
+    driver: local
+  zabbix-frontend-ssl:
+    driver: local
+  zabbix-frontend-certs:
+    driver: local
+networks:
+  zabbix-monit:
+    driver: bridge
+
